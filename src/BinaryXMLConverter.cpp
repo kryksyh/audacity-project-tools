@@ -281,17 +281,10 @@ class IdsLookup final
 public:
     void store(uint16_t index, std::string value)
     {
-        const auto size = mIds.size();
+        if (index >= mIds.size())
+            mIds.resize(index + 1);
 
-        if (index == size)
-            mIds.push_back(std::move(value));
-        else
-        {
-            if ((index + 1) < size)
-                mIds.resize(index);
-
-            mIds[index] = std::move(value);
-        }
+        mIds[index] = std::move(value);
     }
 
     std::string_view get(uint16_t index)
