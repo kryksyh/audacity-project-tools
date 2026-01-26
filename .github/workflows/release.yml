@@ -1,0 +1,53 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: 'Workflow run ID to take artifacts from'
+        required: true
+        type: string
+      tag:
+        description: 'Tag name (e.g. v1.0.5)'
+        required: true
+        type: string
+      prerelease:
+        description: 'Mark as pre-release'
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Download artifacts
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        mkdir -p release-assets
+        gh run download ${{ inputs.run_id }} --dir release-artifacts
+
+        for dir in release-artifacts/*/; do
+          name=$(basename "$dir")
+          (cd "$dir" && zip -r "../../release-assets/${name}.zip" .)
+        done
+
+    - name: Create tag
+      run: |
+        git tag ${{ inputs.tag }}
+        git push origin ${{ inputs.tag }}
+
+    - name: Create release
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        gh release create ${{ inputs.tag }} \
+          --title "${{ inputs.tag }}" \
+          ${{ inputs.prerelease && '--prerelease' || '' }} \
+          release-assets/*
