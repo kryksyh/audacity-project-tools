@@ -48,12 +48,12 @@ public:
             return 0;
 
         const size_t chunkIndex = offset / BUFFER_SIZE;
-        offset = offset - BUFFER_SIZE * chunkIndex;
+        const size_t chunkOffset = offset - BUFFER_SIZE * chunkIndex;
 
-        if (BUFFER_SIZE < (offset + size))
+        if (BUFFER_SIZE < (chunkOffset + size))
             return read(&data, offset, size);
 
-        const void* ptr = mChunks[chunkIndex].data() + offset;
+        const void* ptr = mChunks[chunkIndex].data() + chunkOffset;
 
         data = *static_cast<const T*>(ptr);
 
