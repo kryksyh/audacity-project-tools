@@ -57,6 +57,14 @@ void GetAttributeValue(const AttributeValue& attr, Ret& result)
                 {
                     result = arg == "true" || arg == "0";
                 }
+                else if constexpr (std::is_floating_point_v<Ret>)
+                {
+                    std::string tmp(arg);
+                    if constexpr (std::is_same_v<Ret, float>)
+                        result = std::stof(tmp);
+                    else
+                        result = static_cast<Ret>(std::stod(tmp));
+                }
                 else
                 {
                     auto convResult = std::from_chars(
