@@ -132,6 +132,12 @@ AudacityDatabase::AudacityDatabase(
         }, true);
 }
 
+AudacityDatabase::~AudacityDatabase()
+{
+    mDatabase.reset();
+    removeJournalFiles(mReadOnly ? mProjectPath : mWritablePath);
+}
+
 void AudacityDatabase::reopenReadonlyAsWritable()
 {
     if (!mReadOnly)
@@ -466,22 +472,26 @@ void AudacityDatabase::extractTrack(
     waveFile.writeFile();
 }
 
+void AudacityDatabase::removeJournalFiles(const std::filesystem::path& dbPath)
+{
+    auto walFile = dbPath;
+    walFile.replace_extension("aup3-wal");
+
+    if (std::filesystem::exists(walFile))
+        std::filesystem::remove(walFile);
+
+    auto shmFile = dbPath;
+    shmFile.replace_extension("aup3-shm");
+
+    if (std::filesystem::exists(shmFile))
+        std::filesystem::remove(shmFile);
+}
+
 void AudacityDatabase::removeOldFiles()
 {
     if (std::filesystem::exists(mWritablePath))
     {
         std::filesystem::remove(mWritablePath);
-
-        auto walFile = mWritablePath;
-        walFile.replace_extension("aup3-wal");
-
-        if (std::filesystem::exists(walFile))
-            std::filesystem::remove(walFile);
-
-        auto shmFile = mWritablePath;
-        shmFile.replace_extension("aup3-shm");
-
-        if (std::filesystem::exists(shmFile))
-            std::filesystem::remove(shmFile);
+        removeJournalFiles(mWritablePath);
     }
 }
