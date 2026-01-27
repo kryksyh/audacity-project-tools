@@ -15,7 +15,7 @@ jobs:
     strategy:
       matrix:
         config:
-        - os: ubuntu-latest
+        - os: ubuntu-22.04
           preset: conan-release
         - os: macos-latest
           preset: conan-release
