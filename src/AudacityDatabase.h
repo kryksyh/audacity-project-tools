@@ -24,6 +24,7 @@ class AudacityDatabase final
 public:
     explicit AudacityDatabase(
         const std::filesystem::path& path, RecoveryConfig recoveryConfig);
+    ~AudacityDatabase();
 
     void reopenReadonlyAsWritable();
     void recoverDatabase();
@@ -43,6 +44,7 @@ public:
     void extractTrack(SampleFormat format, int32_t sampleRate, bool asStereo);
 
 private:
+    static void removeJournalFiles(const std::filesystem::path& dbPath);
     void removeOldFiles();
 
     std::unique_ptr<SQLite::Database> mDatabase;

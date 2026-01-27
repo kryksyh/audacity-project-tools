@@ -86,6 +86,7 @@ Buffer::read(void* data, size_t offset, size_t size) const noexcept
         offset = 0;
         bytesLeft -= chunkSize;
         outPtr += chunkSize;
+        ++chunk;
     }
 
     return size;

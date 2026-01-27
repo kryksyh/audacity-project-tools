@@ -483,15 +483,22 @@ void AudacityProject::removeUnusedBlocks()
 
     readBlocksList.reset();
 
-    std::set<int64_t> orphanedBlocks;
+    std::set<int64_t> usedBlocks;
 
-    for (const auto block : mWaveBlocks)
+    for (const auto& block : mWaveBlocks)
     {
         if (block.isSilence())
             continue;
 
-        if (availableBlocks.count(block.getBlockId()) == 0)
-            orphanedBlocks.emplace(block.getBlockId());
+        usedBlocks.emplace(block.getBlockId());
+    }
+
+    std::set<int64_t> orphanedBlocks;
+
+    for (auto blockId : availableBlocks)
+    {
+        if (usedBlocks.count(blockId) == 0)
+            orphanedBlocks.emplace(blockId);
     }
 
     mDb.reopenReadonlyAsWritable();

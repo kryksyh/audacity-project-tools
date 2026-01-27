@@ -55,7 +55,7 @@ void GetAttributeValue(const AttributeValue& attr, Ret& result)
             {
                 if constexpr (std::is_same_v<Ret, bool>)
                 {
-                    result = arg == "true" || arg == "0";
+                    result = arg == "true" || arg == "1";
                 }
                 else if constexpr (std::is_floating_point_v<Ret>)
                 {
