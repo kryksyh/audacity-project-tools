@@ -10,27 +10,42 @@ env:
 
 jobs:
   build:
-    name: Building ${{ matrix.config.os }}
+    name: Building ${{ matrix.config.name }}
     runs-on: ${{ matrix.config.os }}
+    container: ${{ matrix.config.container || '' }}
     strategy:
       matrix:
         config:
         - os: ubuntu-22.04
+          name: linux
           preset: conan-release
+        - os: ubuntu-22.04
+          name: linux-static
+          preset: conan-release
+          container: alpine:3.21
+          cmake_extra: -DCMAKE_EXE_LINKER_FLAGS=-static
+          conan_extra: --build="b2/*"
         - os: macos-latest
+          name: macos
           preset: conan-release
         - os: windows-2022
+          name: windows
           preset: conan-default
     steps:
+    - name: Install Alpine build tools
+      if: matrix.config.container
+      run: apk add --no-cache cmake g++ make python3 py3-pip git linux-headers perl bash
+
     - uses: actions/checkout@v4
 
     - name: Setup Python
+      if: ${{ !matrix.config.container }}
       uses: actions/setup-python@v5
       with:
         python-version: '3.12'
 
     - name: Install Conan
-      run: pip install "conan>=2"
+      run: python3 -m pip install --break-system-packages "conan>=2"
 
     - name: Detect Conan profile
       run: conan profile detect --force
@@ -39,15 +54,15 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ~/.conan2
-        key: conan-${{ matrix.config.os }}-${{ hashFiles('conanfile.txt') }}
+        key: conan-${{ matrix.config.name }}-${{ hashFiles('conanfile.txt') }}
         restore-keys: |
-          conan-${{ matrix.config.os }}-
+          conan-${{ matrix.config.name }}-
 
     - name: Install dependencies
-      run: conan install . --output-folder=build/${{ env.BUILD_TYPE }} --build=missing -s build_type=${{ env.BUILD_TYPE }}
+      run: conan install . --output-folder=build/${{ env.BUILD_TYPE }} --build=missing ${{ matrix.config.conan_extra }} -s build_type=${{ env.BUILD_TYPE }}
 
     - name: Configure CMake
-      run: cmake --preset ${{ matrix.config.preset }}
+      run: cmake --preset ${{ matrix.config.preset }} ${{ matrix.config.cmake_extra }}
 
     - name: Build
       run: cmake --build build/${{ env.BUILD_TYPE }} --config ${{ env.BUILD_TYPE }}
@@ -59,7 +74,7 @@ jobs:
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
-        name: audacity-project-tools-${{ matrix.config.os }}
+        name: audacity-project-tools-${{ matrix.config.name }}
         path: |
           build/${{ env.BUILD_TYPE }}/packages/*
           !build/${{ env.BUILD_TYPE }}/packages/_CPack_Packages
