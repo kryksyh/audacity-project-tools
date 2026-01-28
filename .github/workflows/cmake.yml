@@ -67,11 +67,80 @@ jobs:
     - name: Build
       run: cmake --build build/${{ env.BUILD_TYPE }} --config ${{ env.BUILD_TYPE }}
 
+    - name: Package (arm64)
+      if: runner.os == 'macOS'
+      working-directory: build/${{ env.BUILD_TYPE }}
+      run: cmake --build . --target package --config ${{ env.BUILD_TYPE }}
+
+    - name: Upload artifact (arm64)
+      if: runner.os == 'macOS'
+      uses: actions/upload-artifact@v4
+      with:
+        name: audacity-project-tools-macos-arm64
+        path: |
+          build/${{ env.BUILD_TYPE }}/packages/*
+          !build/${{ env.BUILD_TYPE }}/packages/_CPack_Packages
+        if-no-files-found: error
+
+    - name: Install dependencies (x86_64)
+      if: runner.os == 'macOS'
+      run: conan install . --output-folder=build/x86_64 --build=missing -s build_type=${{ env.BUILD_TYPE }} -s arch=x86_64
+
+    - name: Configure CMake (x86_64)
+      if: runner.os == 'macOS'
+      run: cmake -S . -B build/x86_64 -DCMAKE_TOOLCHAIN_FILE=build/x86_64/conan_toolchain.cmake -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} -DCMAKE_OSX_ARCHITECTURES=x86_64
+
+    - name: Build (x86_64)
+      if: runner.os == 'macOS'
+      run: cmake --build build/x86_64 --config ${{ env.BUILD_TYPE }}
+
+    - name: Package (x86_64)
+      if: runner.os == 'macOS'
+      working-directory: build/x86_64
+      run: cmake --build . --target package --config ${{ env.BUILD_TYPE }}
+
+    - name: Upload artifact (x86_64)
+      if: runner.os == 'macOS'
+      uses: actions/upload-artifact@v4
+      with:
+        name: audacity-project-tools-macos-x86_64
+        path: |
+          build/x86_64/packages/*
+          !build/x86_64/packages/_CPack_Packages
+        if-no-files-found: error
+
+    - name: Create universal binaries
+      if: runner.os == 'macOS'
+      run: |
+        for bin in build/${{ env.BUILD_TYPE }}/bin/*; do
+          [ -f "$bin" ] || continue
+          name=$(basename "$bin")
+          lipo -create "$bin" "build/x86_64/bin/$name" -output "$bin.universal"
+          mv "$bin.universal" "$bin"
+        done
+
+    - name: Package (universal)
+      if: runner.os == 'macOS'
+      working-directory: build/${{ env.BUILD_TYPE }}
+      run: cmake --build . --target package --config ${{ env.BUILD_TYPE }}
+
+    - name: Upload artifact (universal)
+      if: runner.os == 'macOS'
+      uses: actions/upload-artifact@v4
+      with:
+        name: audacity-project-tools-macos-universal
+        path: |
+          build/${{ env.BUILD_TYPE }}/packages/*
+          !build/${{ env.BUILD_TYPE }}/packages/_CPack_Packages
+        if-no-files-found: error
+
     - name: Package
+      if: runner.os != 'macOS'
       working-directory: build/${{ env.BUILD_TYPE }}
       run: cmake --build . --target package --config ${{ env.BUILD_TYPE }}
 
     - name: Upload artifact
+      if: runner.os != 'macOS'
       uses: actions/upload-artifact@v4
       with:
         name: audacity-project-tools-${{ matrix.config.name }}
