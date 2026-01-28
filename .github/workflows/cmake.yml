@@ -25,6 +25,9 @@ jobs:
           container: alpine:3.21
           cmake_extra: -DCMAKE_EXE_LINKER_FLAGS=-static
           conan_extra: --build="b2/*"
+        - os: ubuntu-24.04-arm
+          name: linux-arm64
+          preset: conan-release
         - os: macos-latest
           name: macos
           preset: conan-release
