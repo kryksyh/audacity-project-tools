@@ -31,6 +31,9 @@ jobs:
         - os: windows-2022
           name: windows
           preset: conan-default
+        - os: windows-11-arm
+          name: windows-arm64
+          preset: conan-default
     steps:
     - name: Install Alpine build tools
       if: matrix.config.container
